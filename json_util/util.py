@@ -4,6 +4,7 @@ from argparse import ArgumentParser
 import json
 import sys
 import codecs
+import ast
 
 ARGS = {}
 parser = ArgumentParser(description='JSON utilities.')
@@ -99,6 +100,23 @@ def union():
     print "Finished generating the union"
 
 
+def filter_keys():
+    parser.add_argument("file", help="input files 1")
+    parser.add_argument("-k", "--keys", default="id", help="key to be retained")
+    args = parser.parse_args(sys.argv[1:])
+    keys = args.keys.strip().split(",")
+    new_file = "output/{}_filtered_on_{}.json".format(args.file.split("/")[-1], args.keys)
+    with codecs.open(args.file, "rb") as read_file, codecs.open(new_file, "wb") as output_file:
+        for line in read_file:
+            new_data= {}
+            data = json.loads(line)
+            for key in keys:
+                new_data[key] = data[key]
+            output_file.write("{}\n".format(json.dumps(new_data)))
+
+    print "Finished generating filtered file: "+new_file
+
+
 
 
 if __name__ == "__main__":
@@ -106,11 +124,13 @@ if __name__ == "__main__":
     if len(sys.argv) <= 1:
         print "please pass the command as the first argument"
         exit(0)
-    print sys.argv
+
     if sys.argv[1] == 'intersect':
         intersect()
     elif sys.argv[1] == 'subtract':
         subtract()
     elif sys.argv[1] == 'union':
         union()
+    elif sys.argv[1] == 'filter_keys':
+        filter_keys()
     print "done"
