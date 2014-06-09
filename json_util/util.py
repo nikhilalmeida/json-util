@@ -105,7 +105,7 @@ def filter_keys():
     parser.add_argument("-k", "--keys", default="id", help="key to be retained")
     args = parser.parse_args(sys.argv[1:])
     keys = args.keys.strip().split(",")
-    new_file = "output/{}_filtered_on_{}.json".format(args.file.split("/")[-1], args.keys)
+    new_file = "output/{}_filtered_for_{}.json".format(args.file.split("/")[-1], "_".join(keys))
     with codecs.open(args.file, "rb") as read_file, codecs.open(new_file, "wb") as output_file:
         for line in read_file:
             new_data= {}
@@ -113,6 +113,44 @@ def filter_keys():
             for key in keys:
                 new_data[key] = data[key]
             output_file.write("{}\n".format(json.dumps(new_data)))
+
+    print "Finished generating filtered file: "+new_file
+
+
+def set_key():
+    parser.add_argument("file", help="input file ")
+    parser.add_argument("key",  help="key to be set")
+    parser.add_argument("value",  help="value to be set")
+    parser.add_argument("-k", "--type", default="string", help="data type (number/boolean/string)")
+    args = parser.parse_args(sys.argv[1:])
+
+    new_file = "output/{}_with_key_{}_set.json".format(args.file.split("/")[-1], args.key)
+    with codecs.open(args.file, "rb") as read_file, codecs.open(new_file, "wb") as output_file:
+        for line in read_file:
+            data = json.loads(line)
+            data[args.key] = args.value if args.type == "string" else ast.literal_eval(args.value)
+
+            output_file.write("{}\n".format(json.dumps(data)))
+
+    print "Finished generating filtered file: "+new_file
+
+
+def rename_key():
+    parser.add_argument("file", help="input file ")
+    parser.add_argument("old_key",  help="key to be renamed")
+    parser.add_argument("new_key",  help="new key name")
+
+    args = parser.parse_args(sys.argv[1:])
+
+    new_file = "output/{}_with_key_{}_renamed.json".format(args.file.split("/")[-1], args.old_key)
+    with codecs.open(args.file, "rb") as read_file, codecs.open(new_file, "wb") as output_file:
+        for line in read_file:
+            data = json.loads(line)
+            if args.old_key in data:
+                data[args.new_key] = data[args.old_key]
+                data.pop(args.old_key, None)
+
+            output_file.write("{}\n".format(json.dumps(data)))
 
     print "Finished generating filtered file: "+new_file
 
@@ -133,4 +171,10 @@ if __name__ == "__main__":
         union()
     elif sys.argv[1] == 'filter_keys':
         filter_keys()
+    elif sys.argv[1] == 'set_key':
+        set_key()
+    elif sys.argv[1] == 'rename_key':
+        rename_key()
+    else:
+        print "Could not recognize command."
     print "done"
