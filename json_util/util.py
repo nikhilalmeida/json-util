@@ -5,6 +5,7 @@ import json
 import sys
 import codecs
 import ast
+import itertools
 
 ARGS = {}
 parser = ArgumentParser(description='JSON utilities.')
@@ -17,7 +18,8 @@ def intersect():
     parser.add_argument("-k", "--key", default="id", help="key to join on")
     args = parser.parse_args(sys.argv[1:])
     with codecs.open(args.file_1, "rb") as file_1, codecs.open(args.file_2, "rb") as file_2, codecs.open(
-            "output/intersection_of_{}_and_{}_on_{}".format(args.file_1.split("/")[-1], args.file_2.split("/")[-1], args.key), "wb") as output_file:
+            "output/intersection_of_{}_and_{}_on_{}".format(args.file_1.split("/")[-1], args.file_2.split("/")[-1],
+                                                            args.key), "wb") as output_file:
         cache = {}
         print "Loading file {} into memory.".format(args.file_1)
         for line in file_1:
@@ -43,9 +45,10 @@ def subtract():
     parser.add_argument("file_2", help="input files 1")
     parser.add_argument("-k", "--key", default="id", help="key to join on")
     args = parser.parse_args(sys.argv[1:])
-    print "coming in here",args
+    print "coming in here", args
     with codecs.open(args.file_1, "rb") as file_1, codecs.open(args.file_2, "rb") as file_2, codecs.open(
-            "output/subtraction_of_{}_and_{}_on_{}".format(args.file_1.split("/")[-1], args.file_2.split("/")[-1], args.key), "wb") as output_file:
+            "output/subtraction_of_{}_and_{}_on_{}".format(args.file_1.split("/")[-1], args.file_2.split("/")[-1],
+                                                           args.key), "wb") as output_file:
         cache = {}
         print "Loading file {} into memory.".format(args.file_2)
         for line in file_2:
@@ -54,7 +57,7 @@ def subtract():
         count = 0
         found = 0
         for line in file_1:
-            count +=1
+            count += 1
             if count % 100000 == 0:
                 print "Finished processing {} lines.\nUnMatched {} lines".format(count, found)
             data = json.loads(line)
@@ -70,7 +73,8 @@ def union():
     parser.add_argument("-k", "--key", default="id", help="key to join on")
     args = parser.parse_args(sys.argv[1:])
     with codecs.open(args.file_1, "rb") as file_1, codecs.open(args.file_2, "rb") as file_2, codecs.open(
-            "output/union_of_{}_and_{}_on_{}".format(args.file_1.split("/")[-1], args.file_2.split("/")[-1], args.key), "wb") as output_file:
+            "output/union_of_{}_and_{}_on_{}".format(args.file_1.split("/")[-1], args.file_2.split("/")[-1], args.key),
+            "wb") as output_file:
         cache = {}
         print "Loading file {} into memory.".format(args.file_1)
         for line in file_1:
@@ -94,7 +98,7 @@ def union():
         print "found {} title in common".format(found)
         print "Adding titles in {} that were not present in {}".format(args.file_1, args.file_2)
         for key, value in cache.items():
-            if value!="used":
+            if value != "used":
                 output_file.write("%s\n" % json.dumps(value))
 
     print "Finished generating the union"
@@ -108,19 +112,19 @@ def filter_keys():
     new_file = "output/{}_filtered_for_{}.json".format(args.file.split("/")[-1], "_".join(keys))
     with codecs.open(args.file, "rb") as read_file, codecs.open(new_file, "wb") as output_file:
         for line in read_file:
-            new_data= {}
+            new_data = {}
             data = json.loads(line)
             for key in keys:
                 new_data[key] = data[key]
             output_file.write("{}\n".format(json.dumps(new_data)))
 
-    print "Finished generating filtered file: "+new_file
+    print "Finished generating filtered file: " + new_file
 
 
 def set_key():
     parser.add_argument("file", help="input file ")
-    parser.add_argument("key",  help="key to be set")
-    parser.add_argument("value",  help="value to be set")
+    parser.add_argument("key", help="key to be set")
+    parser.add_argument("value", help="value to be set")
     parser.add_argument("-k", "--type", default="string", help="data type (number/boolean/string)")
     args = parser.parse_args(sys.argv[1:])
 
@@ -132,13 +136,13 @@ def set_key():
 
             output_file.write("{}\n".format(json.dumps(data)))
 
-    print "Finished generating filtered file: "+new_file
+    print "Finished generating filtered file: " + new_file
 
 
 def rename_key():
     parser.add_argument("file", help="input file ")
-    parser.add_argument("old_key",  help="key to be renamed")
-    parser.add_argument("new_key",  help="new key name")
+    parser.add_argument("old_key", help="key to be renamed")
+    parser.add_argument("new_key", help="new key name")
 
     args = parser.parse_args(sys.argv[1:])
 
@@ -152,7 +156,7 @@ def rename_key():
 
             output_file.write("{}\n".format(json.dumps(data)))
 
-    print "Finished generating filtered file: "+new_file
+    print "Finished generating filtered file: " + new_file
 
 
 def unique():
@@ -170,6 +174,26 @@ def unique():
                 cache.add(data[args.key])
 
     print "Finished finding uniques"
+
+
+def tab_to_json():
+    parser.add_argument("file_1", help="input file 1")
+    parser.add_argument("-k", "--keys", default=None, help="comma separated list of keys if no keys exists")
+    args = parser.parse_args(sys.argv[1:])
+    new_file = "output/{}.json".format(args.file_1.split("/")[-1].split(".")[0])
+
+    with codecs.open(args.file_1, "rb") as file_1, codecs.open(
+            new_file, "wb") as output_file:
+        if not args.keys:
+            keys = file_1.readline().strip().split("\t")
+        else:
+            keys = args.keys.strip().split(",")
+
+        print "Loading file {} into memory.".format(args.file_1)
+        for line in file_1:
+            data = line.strip().split("\t")
+            output_file.write("{}\n".format(dict(itertools.izip(keys, data))))
+    print "Finished converting {} to json.\nNew file located at {}".format(args.file_1, new_file)
 
 
 if __name__ == "__main__":
@@ -192,6 +216,8 @@ if __name__ == "__main__":
         rename_key()
     elif sys.argv[1] == 'unique':
         unique()
+    elif sys.argv[1] == 'tab_to_json':
+        tab_to_json()
     else:
         print "Could not recognize command."
     print "done"
