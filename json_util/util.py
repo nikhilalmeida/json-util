@@ -84,7 +84,7 @@ def union():
             if count % 100000 == 0:
                 print "Finished processing {} lines.\nMatched {} lines".format(count, found)
             data = json.loads(line)
-            if data[args.key] in cache:
+            if data[args.key] in cache and cache[data[args.key]] != "used":
                 found += 1
                 out = dict(data.items() + cache[data[args.key]].items())
                 output_file.write("%s\n" % json.dumps(out))
@@ -101,7 +101,7 @@ def union():
 
 
 def filter_keys():
-    parser.add_argument("file", help="input files 1")
+    parser.add_argument("file", help="input file 1")
     parser.add_argument("-k", "--keys", default="id", help="key to be retained")
     args = parser.parse_args(sys.argv[1:])
     keys = args.keys.strip().split(",")
@@ -155,6 +155,21 @@ def rename_key():
     print "Finished generating filtered file: "+new_file
 
 
+def unique():
+    parser.add_argument("file_1", help="input files 1")
+    parser.add_argument("-k", "--key", default="id", help="key to join on")
+    args = parser.parse_args(sys.argv[1:])
+    with codecs.open(args.file_1, "rb") as file_1, codecs.open(
+            "output/{}_unique_on_{}".format(args.file_1.split("/")[-1], args.key), "wb") as output_file:
+        cache = set()
+        print "Loading file {} into memory.".format(args.file_1)
+        for line in file_1:
+            data = json.loads(line)
+            if data[args.key] not in cache:
+                output_file.write(line)
+                cache.add(data[args.key])
+
+    print "Finished finding uniques"
 
 
 if __name__ == "__main__":
@@ -175,6 +190,8 @@ if __name__ == "__main__":
         set_key()
     elif sys.argv[1] == 'rename_key':
         rename_key()
+    elif sys.argv[1] == 'unique':
+        unique()
     else:
         print "Could not recognize command."
     print "done"
