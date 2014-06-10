@@ -192,6 +192,7 @@ def tab_to_json():
         print "Loading file {} into memory.".format(args.file_1)
         for line in file_1:
             data = line.strip().split("\t")
+            data = [line.strip() if type(line) == type(" ") else line  for line in data]
             output_file.write("{}\n".format(dict(itertools.izip(keys, data))))
     print "Finished converting {} to json.\nNew file located at {}".format(args.file_1, new_file)
 
@@ -216,7 +217,7 @@ if __name__ == "__main__":
         rename_key()
     elif sys.argv[1] == 'unique':
         unique()
-    elif sys.argv[1] == 'tab_to_json':
+    elif sys.argv[1] == 't2j':
         tab_to_json()
     else:
         print "Could not recognize command."
