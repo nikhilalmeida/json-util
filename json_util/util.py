@@ -190,10 +190,13 @@ def tab_to_json():
             keys = args.keys.strip().split(",")
 
         print "Loading file {} into memory.".format(args.file_1)
+        count = 0
         for line in file_1:
+            count +=1
+            if count %500000:
+                print count
             data = line.strip().split("\t")
-            data = [line.strip() if type(line) == type(" ") else line  for line in data]
-            output_file.write("{}\n".format(dict(itertools.izip(keys, data))))
+            output_file.write("{}\n".format(json.dumps(dict(itertools.izip(keys, data)))))
     print "Finished converting {} to json.\nNew file located at {}".format(args.file_1, new_file)
 
 
