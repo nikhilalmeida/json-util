@@ -6,6 +6,7 @@ import sys
 import codecs
 import ast
 import itertools
+import collections
 
 ARGS = {}
 parser = ArgumentParser(description='JSON utilities.')
@@ -37,6 +38,7 @@ def intersect():
                 found += 1
                 out = dict(data.items() + cache[data[args.key]].items())
                 output_file.write("%s\n" % json.dumps(out))
+    print "Finished processing {} lines.\nMatched {} lines".format(count, found)
     print "Finished generating the intersection"
 
 
@@ -201,6 +203,46 @@ def tab_to_json():
     print "Finished converting {} to json.\nNew file located at {}".format(args.file_1, new_file)
 
 
+def find_keys(input_file=None):
+    if not input_file:
+        parser.add_argument("file_1", help="input file")
+        args = parser.parse_args(sys.argv[1:])
+        input_file = args.file_1
+    keys = set()
+    print "Finding keys in json file"
+    with codecs.open(input_file, "rb") as file_1:
+        print "Loading file {} into memory.".format(input_file)
+        for line in file_1:
+            for key in json.loads(line).keys():
+                keys.add(key.strip())
+    print "Finished finding keys...\n Keys are:\n",
+    for key in keys:
+        print key,",\t",
+    return keys
+
+
+def json_to_tab():
+    parser.add_argument("file_1", help="input file")
+    args = parser.parse_args(sys.argv[1:])
+    new_file_name = "output/{}.tab".format(args.file_1.split("/")[-1].split(".")[0])
+    keys = find_keys(args.file_1)
+
+    with codecs.open(args.file_1, "rb") as file_1, codecs.open( new_file_name, "wb") as output_file:
+        [output_file.write("{}\t".format(key)) for key in keys]
+        output_file.write("\n")
+
+        print "Loading file {} into memory.".format(args.file_1)
+        for line in file_1:
+            data = json.loads(line)
+            for key in keys:
+                output_file.write("{}\t".format(data.get(key,"")))
+            output_file.write("\n")
+    print "Finished converting {} to tab.\nNew file located at {}".format(args.file_1, new_file_name)
+
+
+
+
+
 if __name__ == "__main__":
 
     if len(sys.argv) <= 1:
@@ -223,6 +265,10 @@ if __name__ == "__main__":
         unique()
     elif sys.argv[1] == 't2j':
         tab_to_json()
+    elif sys.argv[1] == 'j2t':
+        json_to_tab()
+    elif sys.argv[1] == 'find_keys':
+        find_keys()
     else:
         print "Could not recognize command."
     print "done"
